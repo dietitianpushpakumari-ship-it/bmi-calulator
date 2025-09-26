@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Status Evaluator</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Configure Tailwind to use the Inter font
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for aesthetic enhancements */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+        .card {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+        .progress-bar {
+            height: 10px;
+            border-radius: 9999px;
+            background-color: #e5e7eb;
+            overflow: hidden;
+        }
+        .progress-fill {
+            transition: width 1s ease-in-out;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-8 min-h-screen flex items-center justify-center">
+
+<div id="app" class="w-full max-w-2xl mx-auto">
+    <header class="text-center mb-8">
+        <h1 class="text-4xl font-extrabold text-blue-700">Health & Wellness Evaluator</h1>
+        <p class="text-gray-500 mt-2">Complete this quick survey to instantly evaluate your current health status and discover your next steps.</p>
+    </header>
+
+    <!-- STEP 1: Input Form -->
+    <div id="survey-section" class="card bg-white p-6 sm:p-8 rounded-xl border border-gray-200">
+        <h2 class="text-2xl font-semibold mb-6 text-gray-800">Your Current Health Snapshot</h2>
+        
+        <div class="grid md:grid-cols-2 gap-6">
+            <!-- Age -->
+            <div>
+                <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age (Years)</label>
+                <input type="number" id="age" min="1" max="120" placeholder="e.g., 35"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" required>
+            </div>
+            <!-- Weight -->
+            <div>
+                <label for="weight" class="block text-sm font-medium text-gray-700 mb-1">Weight (kg)</label>
+                <input type="number" id="weight" min="1" max="500" placeholder="e.g., 70"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" required>
+            </div>
+             <!-- Height -->
+            <div>
+                <label for="height" class="block text-sm font-medium text-gray-700 mb-1">Height (cm)</label>
+                <input type="number" id="height" min="50" max="250" placeholder="e.g., 175"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" required>
+            </div>
+            <!-- Exercise Frequency -->
+            <div>
+                <label for="exercise" class="block text-sm font-medium text-gray-700 mb-1">Weekly Exercise (Hours)</label>
+                <input type="number" id="exercise" min="0" max="50" placeholder="e.g., 3"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" required>
+            </div>
+            <!-- Sleep Quality -->
+            <div class="md:col-span-2">
+                <label for="sleep" class="block text-sm font-medium text-gray-700 mb-1">Average Nightly Sleep (Hours)</label>
+                <input type="number" id="sleep" step="0.5" min="2" max="12" placeholder="e.g., 7.5"
+                       class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150" required>
+            </div>
+        </div>
+        
+        <div id="error-message" class="text-red-600 mt-4 hidden p-3 bg-red-100 rounded-lg border border-red-200">
+            Please fill in all fields with valid numbers before proceeding.
+        </div>
+
+        <button onclick="startEvaluation()" 
+                class="mt-8 w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg shadow-lg hover:bg-blue-700 transition duration-200 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-opacity-50">
+            Evaluate My Status
+        </button>
+    </div>
+
+    <!-- STEP 2: Loading State -->
+    <div id="loading-section" class="hidden card bg-white p-8 rounded-xl text-center border border-gray-200">
+        <div class="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto"></div>
+        <p class="mt-4 text-xl font-medium text-gray-700">Analyzing your data...</p>
+        <p class="text-sm text-gray-500">Generating your personalized health evaluation.</p>
+    </div>
+
+    <!-- STEP 3: Results, Solution, and Booking Plan -->
+    <div id="results-section" class="hidden card bg-white p-6 sm:p-10 rounded-xl border border-gray-200">
+        <h2 class="text-3xl font-bold text-green-600 mb-6">Your Health Evaluation is Ready!</h2>
+
+        <!-- Health Score -->
+        <div class="mb-8 p-5 bg-blue-50 rounded-lg">
+            <h3 class="text-xl font-semibold text-gray-700 mb-2">Overall Health Score: <span id="health-score" class="text-blue-700 text-3xl font-extrabold">--</span> / 100</h3>
+            <div class="progress-bar">
+                <div id="progress-fill" class="progress-fill h-full bg-blue-500" style="width: 0%"></div>
+            </div>
+            <p id="health-status" class="mt-3 text-lg font-medium text-gray-600">Status: <span class="font-bold">--</span></p>
+        </div>
+
+        <!-- BMI Display (as a key metric) -->
+        <div class="mb-8 p-4 bg-gray-50 rounded-lg border border-gray-200">
+             <h4 class="text-lg font-semibold text-gray-700 mb-2">Key Metric: BMI</h4>
+             <p class="text-gray-600">Your calculated BMI is <span id="bmi-value" class="font-bold text-blue-600">--</span> kg/m². (<span id="bmi-status" class="font-semibold text-sm">--</span>)</p>
+        </div>
+
+
+        <!-- Solution and Next Step -->
+        <div class="space-y-6">
+            <h3 class="text-2xl font-bold text-gray-800">Your Personalized Solution</h3>
+            <p id="solution-text" class="text-gray-600 leading-relaxed bg-green-50 p-4 rounded-lg border border-green-200">
+                --
+            </p>
+        </div>
+
+        <div class="mt-10 pt-6 border-t border-gray-200">
+            <h3 class="text-2xl font-bold text-blue-800 mb-4">Next Step: Your Booking Plan</h3>
+            <p class="text-gray-600 mb-6">
+                Ready to take control of your health? We recommend the following plan based on your results:
+            </p>
+            
+            <div id="booking-plan" class="p-4 bg-blue-100 rounded-lg border-l-4 border-blue-500 mb-6">
+                <p class="font-semibold text-blue-700">--</p>
+            </div>
+
+            <button onclick="redirectToBooking()" 
+                    class="w-full py-4 bg-green-500 text-white font-bold text-lg rounded-lg shadow-xl hover:bg-green-600 transition duration-300 focus:outline-none focus:ring-4 focus:ring-green-400">
+                Book My Free Consultation
+            </button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const surveySection = document.getElementById('survey-section');
+    const loadingSection = document.getElementById('loading-section');
+    const resultsSection = document.getElementById('results-section');
+    const errorMsg = document.getElementById('error-message');
+
+    function startEvaluation() {
+        const age = parseFloat(document.getElementById('age').value);
+        const weight = parseFloat(document.getElementById('weight').value); // kg
+        const height = parseFloat(document.getElementById('height').value); // cm
+        const exercise = parseFloat(document.getElementById('exercise').value); // hours/week
+        const sleep = parseFloat(document.getElementById('sleep').value); // hours/night
+
+        // Simple validation check
+        if (isNaN(age) || isNaN(weight) || isNaN(height) || isNaN(exercise) || isNaN(sleep) || 
+            age <= 0 || weight <= 0 || height <= 0 || exercise < 0 || sleep < 0) {
+            errorMsg.classList.remove('hidden');
+            return;
+        }
+
+        errorMsg.classList.add('hidden');
+        surveySection.classList.add('hidden');
+        loadingSection.classList.remove('hidden');
+
+        // Simulate network delay for evaluation (3 seconds)
+        setTimeout(() => {
+            calculateHealthStatus(age, weight, height, exercise, sleep);
+            loadingSection.classList.add('hidden');
+            resultsSection.classList.remove('hidden');
+        }, 3000);
+    }
+
+    function calculateHealthStatus(age, weight, height, exercise, sleep) {
+        // 1. Calculate BMI
+        const heightMeters = height / 100;
+        const bmi = weight / (heightMeters * heightMeters);
+
+        // 2. Calculate Health Score (Max 100 points)
+        let score = 0;
+
+        // Base Age Points (Max 30 points) - Younger is generally better
+        score += Math.max(0, 30 - (age / 2)); 
+
+        // Exercise Points (Max 30 points) - 5+ hours is optimal
+        score += Math.min(30, exercise * 6);
+
+        // Sleep Points (Max 25 points) - 7 to 8 hours is optimal
+        const sleepDeviation = Math.abs(sleep - 7.5);
+        score += Math.max(0, 25 - (sleepDeviation * 5));
+
+        // BMI Points (Max 15 points) - BMI 18.5 to 24.9 is optimal
+        let bmiScore = 0;
+        if (bmi >= 18.5 && bmi <= 24.9) {
+            bmiScore = 15;
+        } else if (bmi >= 25.0 && bmi <= 29.9 || bmi < 18.5) {
+            bmiScore = 10;
+        } else {
+            bmiScore = 5;
+        }
+        score += bmiScore;
+
+        // Final score (capped at 100)
+        const finalScore = Math.round(Math.min(100, score));
+
+        // Determine Status, Solution, and Plan
+        let status, statusColor, solutionText, bookingPlan;
+        
+        if (finalScore >= 85) {
+            status = "Excellent Wellness";
+            statusColor = "text-green-600";
+            solutionText = "Your metrics indicate a remarkably healthy lifestyle. To maintain this excellence and optimize for longevity, we recommend a focused 'Longevity & Performance Review.'";
+            bookingPlan = "Plan A: Longevity & Performance Review (30-min strategy session).";
+        } else if (finalScore >= 60) {
+            status = "Moderate Health";
+            statusColor = "text-yellow-600";
+            solutionText = "You have a solid foundation, but there's room for improvement in key areas like sleep or exercise consistency. A structured plan can help bridge these gaps and elevate your energy levels.";
+            bookingPlan = "Plan B: Wellness Optimization Package (45-min detailed assessment & goal setting).";
+        } else {
+            status = "Needs Immediate Attention";
+            statusColor = "text-red-600";
+            solutionText = "Several key indicators suggest your current lifestyle may be compromising your long-term health. It's important to address these areas immediately to prevent future issues. We strongly recommend a foundational change.";
+            bookingPlan = "Plan C: Foundational Health Reset (60-min in-depth consultation & custom plan design).";
+        }
+
+        // Determine BMI status
+        let bmiStatusText;
+        if (bmi < 18.5) {
+            bmiStatusText = "Underweight";
+        } else if (bmi >= 18.5 && bmi < 25) {
+            bmiStatusText = "Healthy Weight";
+        } else if (bmi >= 25 && bmi < 30) {
+            bmiStatusText = "Overweight";
+        } else {
+            bmiStatusText = "Obese";
+        }
+
+        // Update DOM
+        document.getElementById('health-score').textContent = finalScore;
+        document.getElementById('health-status').innerHTML = `Status: <span class="font-bold ${statusColor}">${status}</span>`;
+        
+        const progressFill = document.getElementById('progress-fill');
+        progressFill.style.width = `${finalScore}%`;
+        
+        // Change progress bar color based on score for better visual feedback
+        if (finalScore < 60) {
+            progressFill.style.backgroundColor = '#ef4444'; // Red
+        } else if (finalScore < 85) {
+            progressFill.style.backgroundColor = '#f59e0b'; // Yellow
+        } else {
+            progressFill.style.backgroundColor = '#10b981'; // Green
+        }
+        
+        document.getElementById('solution-text').textContent = solutionText;
+        document.getElementById('booking-plan').querySelector('p').textContent = bookingPlan;
+        
+        document.getElementById('bmi-value').textContent = bmi.toFixed(1);
+        document.getElementById('bmi-status').textContent = bmiStatusText;
+    }
+
+    function redirectToBooking() {
+        // In a real application, this would redirect to your booking page (e.g., Calendly, dedicated URL).
+        // For this example, we show a success message.
+        document.getElementById('results-section').innerHTML = `
+            <div class="p-10 text-center bg-green-50 rounded-xl">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-green-500 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h2 class="text-3xl font-bold text-green-700">Thank You!</h2>
+                <p class="mt-4 text-lg text-gray-600">Your consultation request has been successfully noted. We will contact you within 24 hours to schedule your ${document.getElementById('booking-plan').querySelector('p').textContent.replace('Plan A: ', '').replace('Plan B: ', '').replace('Plan C: ', '')}.</p>
+                <p class="mt-4 text-sm text-gray-500">You can close this window now.</p>
+            </div>
+        `;
+    }
+</script>
+</body>
+</html>
